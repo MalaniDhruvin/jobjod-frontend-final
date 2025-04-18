@@ -1,0 +1,162 @@
+.marquee-container {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .marquee-container::before,
+  .marquee-container::after {
+    content: "";
+    height: 100%;
+    width: 50px;
+    position: absolute;
+    top: 0;
+    z-index: 2;
+  }
+  
+  .marquee-container::before {
+    left: 0;
+    background: linear-gradient(to right, white, transparent);
+  }
+  
+  .marquee-container::after {
+    right: 0;
+    background: linear-gradient(to left, white, transparent);
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  .nav-links {
+    display: flex;
+    gap: 15px; /* Space between links */
+  }
+  
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .search-bar input {
+    flex: 1; /* Input fields take equal space */
+  }
+  
+  .search-bar button {
+    background-color: #6b46c1; /* Purple button */
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+  }
+  .swiper-wrapper {
+    margin-left: 0;
+  }
+  
+  .swiper-slide {
+    width: 400px;
+  }
+  
+  .job-swiper {
+    padding-bottom: 0 !important;
+    padding-left: 0 !important;
+  }
+  
+  
+  /* Hide default Swiper navigation buttons */
+  .swiper-button-next::after,
+  .swiper-button-prev::after {
+    display: none;
+  }
+  
+  /* Custom styles for job cards */
+  .job-swiper .swiper-slide {
+    height: auto;
+  }
+  
+  /* Ensure proper spacing */
+  .job-swiper {
+    padding: 10px 0;
+    margin: 0 -10px;
+  }
+  
+  .swiper-button-next,
+  .swiper-button-prev {
+    color: #6b46c1 !important;
+    background: rgba(255, 255, 255, 0.8);
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: none !important;
+  }
+  
+  @media (min-width: 640px) {
+    .swiper-button-next,
+    .swiper-button-prev {
+      display: flex !important;
+    }
+  }
+  
+  .swiper-button-next:after,
+  .swiper-button-prev:after {
+    font-size: 18px !important;
+  }
+  
+  .dark .swiper-button-next,
+  .dark .swiper-button-prev {
+    background: rgba(31, 41, 55, 0.8);
+    color: #d1d5db !important;
+  }
+  
+  .job-swiper {
+    padding: 0px 0 40px 0 !important;
+  }
+  
+  /* Mobile pagination styles */
+  .swiper-pagination-bullet {
+    width: 8px;
+    height: 8px;
+    background: #d1d5db;
+    opacity: 0.5;
+  }
+  
+  .swiper-pagination-bullet-active {
+    opacity: 1;
+    background: #6b46c1;
+  }
+  
+  .dark .swiper-pagination-bullet {
+    background: #6b7280;
+  }
+  
+  .dark .swiper-pagination-bullet-active {
+    background: #a78bfa;
+  }
+  
+  /* Improve touch targets for mobile */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  /* Optimize for landscape orientation */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .job-swiper {
+      padding: 0px 0 40px 0 !important;
+    }
+  
+    .swiper-slide > div {
+      max-height: 80vh;
+      overflow-y: auto;
+      
+    }
+  
+  }
+  
+  .swiper-slide-next > div{
+    background-color: #e3dafb
+  }
+
