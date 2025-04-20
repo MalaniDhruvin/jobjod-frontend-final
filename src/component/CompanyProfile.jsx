@@ -31,6 +31,9 @@ function CompanyProfile() {
   const [showEditCultureModal, setShowEditCultureModal] = useState(false);
   const [showEditRecognitionModal, setShowEditRecognitionModal] = useState(false);
   const [recognitions, setRecognitions] = useState([]);
+  const [name, setName] = useState({
+    name:"",location:""
+  });
   const [industries, setIndustries] = useState([
     { id: "1", name: "Information Technology" },
     { id: "2", name: "Digital Marketing" },
@@ -438,8 +441,8 @@ function CompanyProfile() {
                     />
                   </div>
                   <div className="text-center sm:text-left mt-auto mb-auto order-last">
-                    <h1 className="text-2xl font-semibold">Nihar Gami</h1>
-                    <p className="text-gray-600">Godhani Technology</p>
+                    <h1 className="text-2xl font-semibold">{name.name}</h1>
+                    <p className="text-gray-600">{name.location}</p>
                   </div>
                 </div>
               </div>
@@ -463,7 +466,7 @@ function CompanyProfile() {
                     </nav>
                   </div>
                 </div>
-                <CompanyBasicInformation />
+                <CompanyBasicInformation name={setName} />
               </div>
 
               <div className="rounded-lg p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12 lg:pl-20 xl:pl-80 justify-center">

@@ -47,6 +47,7 @@ function App() {
           <Route path="/Job" element={<Job />} />
           <Route path="/Profile" element={<Profile />} />
           <Route path="/Message" element={<Message />} />
+          <Route path="/Message/:id" element={<Message />} />
           <Route path="/Singlejobview/:jobId" element={<Singlejobview />} />
           <Route path="/JobListingPage" element={<JobListingPage />} />
           <Route

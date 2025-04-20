@@ -155,6 +155,9 @@ export default function JobCandidateListing() {
   return (
     <div className="flex flex-col lg:flex-row h-screen bg-white overflow-hidden">
       {/* Left Sidebar */}
+
+
+      {jobs.length > 0 && (
       <div className="hidden lg:block w-full lg:w-1/4 bg-white border-r border-gray-200 p-4">
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -191,9 +194,11 @@ export default function JobCandidateListing() {
             </div>
           ))}
         </div>
-      </div>
+      </div> )}
+
 
       {/* Main Content */}
+      {candidates.length > 0 ? (
       <div className="flex-1 flex flex-col p-3 md:p-6 overflow-y-auto">
         {/* Candidate Cards */}
         <div className="space-y-4">
@@ -296,7 +301,11 @@ export default function JobCandidateListing() {
             </div>
           ))}
         </div>
-      </div>
+      </div>) : (
+        <div className="flex justify-center items-center h-screen w-full">
+          <h1 className="text-3xl text-gray-800">No Applications found</h1>
+        </div>
+      )}
     </div>
 );
 }

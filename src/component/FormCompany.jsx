@@ -84,6 +84,8 @@ export default function FormCompany() {
       // Add any other necessary fields here
     };
 
+    console.log(token)
+
     try {
       // Sending form data to an API (using POST method)
       const response = await axios.post(

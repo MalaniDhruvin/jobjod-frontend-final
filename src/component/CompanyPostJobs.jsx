@@ -130,8 +130,9 @@ function CompanyPostJobs() {
     const fetchSkillsData = async (job) => {
       try {
         // Third API call: fetch skills and responsibilities
-        const skillsRes = await fetch(`${BASE_URL}/job/${job.id}`, fetchOptions);
+        const skillsRes = await fetch(`${BASE_URL}/job-description/${job.id}`, fetchOptions);
         const skillsData = await skillsRes.json();
+        console.log("Skills Data:", skillsData);
   
         // Only update if the incoming data is different or not already set
         // Here we check if both responsibilities and qualifications are already arrays
@@ -231,10 +232,10 @@ function CompanyPostJobs() {
     setEditedRecruiters(jobs[index].interviewPersons || [])
   }
 
-  // If data not loaded yet, show loader.
-  if (!jobs.length || !editedJob) {
-    return <div>Loading...</div>
-  }
+  // // If data not loaded yet, show loader.
+  // if (!jobs.length || !editedJob) {
+  //   return <div>Loading...</div>
+  // }
 
   const currentJob = jobs[selectedJob]
 
@@ -387,6 +388,7 @@ function CompanyPostJobs() {
         {/* Header */}
         <Dheader />
 
+        {jobs.length > 0 ? (
         <div className="flex-1 overflow-hidden">
           {/* Mobile-First Sidebar */}
           <div className="lg:hidden bg-white border-b border-gray-200 p-3">
@@ -407,10 +409,10 @@ function CompanyPostJobs() {
                 className="w-full py-2 px-4 bg-violet-50 text-gray-900 rounded-md flex items-center justify-between"
               >
                 <div>
-                  <h3 className="font-bold text-left">{currentJob.title}</h3>
+                  <h3 className="font-bold text-left">{currentJob?.title}</h3>
                   <p className="text-sm text-gray-500 text-left">
-                    <span className="font-semibold">{currentJob.company}</span>
-                    &nbsp;&nbsp; {currentJob.location}
+                    <span className="font-semibold">{currentJob?.company}</span>
+                    &nbsp;&nbsp; {currentJob?.location}
                   </p>
                 </div>
                 {isJobListOpen ? (
@@ -496,7 +498,7 @@ function CompanyPostJobs() {
                   {appliedForJob ? appliedForJob.length : 0}
                   </h2>
                 </div>
-                <Link to={`/CompanyApplications/${jobs[selectedJob].id}`}>
+                <Link to={`/CompanyApplications/${jobs[selectedJob]?.id}`}>
                   <button className="py-2 px-4 font-semibold bg-white text-purple-500 border border-purple-500 rounded-xl mt-2 md:mt-0">
                     View Applicants
                   </button>
@@ -609,7 +611,7 @@ function CompanyPostJobs() {
               ) : (
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-2">
                   <h1 className="text-xl lg:text-2xl font-bold mb-1 lg:mb-0">
-                    {currentJob.title}
+                    {currentJob?.title}
                   </h1>
                   <div className="flex flex-col items-end">
                     <button
@@ -619,7 +621,7 @@ function CompanyPostJobs() {
                       Edit
                     </button>
                     <span className="text-gray-500 text-sm text-right">
-                      Posted on {currentJob.postedDate} · Expire on {currentJob.expireDate}
+                      Posted on {currentJob?.postedDate} · Expire on {currentJob?.expireDate}
                     </span>
                   </div>
                 </div>
@@ -632,17 +634,17 @@ function CompanyPostJobs() {
                     <div className="h-4 w-4 bg-blue-100 rounded-full"></div>
                   </div>
                   <span className="text-gray-700 font-semibold">
-                    {currentJob.company}
+                    {currentJob?.company}
                   </span>
                   <span className="text-gray-500 ml-1">
-                    {currentJob.location}
+                    {currentJob?.location}
                   </span>
                 </div>
               )}
 
               {/* Salary */}
               {!isEditingJobDetails && (
-                <h2 className="font-bold mt-2 mb-4">Salary: {currentJob.salary}</h2>
+                <h2 className="font-bold mt-2 mb-4">Salary: {currentJob?.salary}</h2>
               )}
 
               {/* Recruiter Card (Interview Persons) */}
@@ -832,7 +834,7 @@ function CompanyPostJobs() {
                     <div className="mb-4">
                       <h3 className="font-medium mb-2">Responsibilities</h3>
                       <ul className="list-disc pl-5 lg:pl-6 space-y-2 font-semibold">
-                        {(currentJob.responsibilities || []).map((item, index) => (
+                        {(currentJob?.responsibilities || []).map((item, index) => (
                           <li key={index} className="text-gray-700">{item}</li>
                         ))}
                       </ul>
@@ -841,7 +843,7 @@ function CompanyPostJobs() {
                     <div className="mb-4">
                       <h3 className="font-medium mb-2">Qualifications and Skills</h3>
                       <ul className="list-disc pl-5 lg:pl-6 space-y-2 font-semibold">
-                        {(currentJob.qualifications || []).map((item, index) => (
+                        {(currentJob?.qualifications || []).map((item, index) => (
                           <li key={index} className="text-gray-700">{item}</li>
                         ))}
                       </ul>
@@ -850,7 +852,7 @@ function CompanyPostJobs() {
                     <div>
                       <h3 className="font-medium mb-2">Preferred Qualifications and Skills</h3>
                       <ol className="list-decimal pl-5 lg:pl-6 space-y-2 font-semibold">
-                        {(currentJob.preferredQualifications || []).map((item, index) => (
+                        {(currentJob?.preferredQualifications || []).map((item, index) => (
                           <li key={index} className="text-gray-700">{item}</li>
                         ))}
                       </ol>
@@ -860,7 +862,22 @@ function CompanyPostJobs() {
               </div>
             </div>
           </div>
-        </div>
+        </div>): (
+          <div className="flex flex-col items-center justify-center h-screen">
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-600">No job posts found.</span>
+              <button
+                onClick={openJobModal}
+                className="text-purple-500 font-medium"
+              >
+                Post a Job
+                </button>
+                </div>
+            <p className="text-gray-500 text-sm mt-2">
+              You can start by adding a new job post.
+              </p>
+            </div>
+        )}
       </div>
 
       {/* Job Post Modal */}

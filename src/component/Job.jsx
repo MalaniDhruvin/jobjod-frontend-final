@@ -269,7 +269,7 @@ const JobDetails = ({ selectedJobId }) => {
                 </p>
               </div>
             </div>
-            <button className="text-blue-500">Send Message</button>
+            <Link to={`/Message/${job.userId}`} className="text-blue-500">Send Message</Link>
           </div>
         ))}
       </div>
@@ -611,7 +611,7 @@ const Job = () => {
   const tabs = [
     "All Jobs",
     "Applied",
-    "Short Listed",
+    "Shortlisted",
     "Interview",
     "Hired",
     "Rejected"
