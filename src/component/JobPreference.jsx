@@ -18,13 +18,8 @@ export default function JobPreference() {
     try {
       const response = await axios.get(
         `${USER_BASE_URL}/preferences/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      // console.log(response.data);
       setPreferences(response.data);
     } catch (error) {
       console.error("Error fetching preferences:", error);
@@ -36,9 +31,9 @@ export default function JobPreference() {
   }, []);
 
   // Handle edit click for a specific field
-  const handleEdit = (id, field) => {
+  const handleEdit = (id, field, label) => {
     const preferenceToEdit = preferences.find((pref) => pref.id === id);
-    setEditingPreference({ ...preferenceToEdit, field });
+    setEditingPreference({ ...preferenceToEdit, field, label });
     setTempValue(preferenceToEdit[field] || "");
     setIsModalOpen(true);
   };
@@ -48,24 +43,19 @@ export default function JobPreference() {
     if (editingPreference) {
       try {
         const { id, field } = editingPreference;
-        const updatedPreference = {
-          [field]: tempValue,
-        };
+        const updatedPreference = { [field]: tempValue };
 
         await axios.put(
           `${USER_BASE_URL}/preferences/${id}`,
           updatedPreference,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        const updatedPreferences = preferences.map((pref) =>
-          pref.id === id ? { ...pref, [field]: tempValue } : pref
+        setPreferences((prev) =>
+          prev.map((pref) =>
+            pref.id === id ? { ...pref, [field]: tempValue } : pref
+          )
         );
-        setPreferences(updatedPreferences);
         setIsModalOpen(false);
       } catch (error) {
         console.error("Error updating preference:", error);
@@ -75,25 +65,26 @@ export default function JobPreference() {
 
   // Handle delete field (clear value for specific field)
   const handleDelete = async (id, field) => {
+    // console.log("Deleting preference:", id, field);
     try {
-      await axios.put(
-        `${USER_BASE_URL}/preferences/${id}`,
-        { [field]: "" }, // Clear the specific field value
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+           await axios.delete(
+             `${USER_BASE_URL}/preferences/${id}`,
+             {
+               headers: { Authorization: `Bearer ${token}` },
+               data: { field }    // send { field: "location" } etc.
+             }
+           );
 
-      const updatedPreferences = preferences.map((pref) =>
-        pref.id === id ? { ...pref, [field]: "" } : pref
+      setPreferences((prev) =>
+        prev.map((pref) =>
+          pref.id === id ? { ...pref, [field]: "" } : pref
+        )
       );
-      setPreferences(updatedPreferences);
     } catch (error) {
       console.error("Error deleting preference:", error);
     }
   };
+
   return (
     <div className="border rounded-xl border-gray-200 p-6 mt-6 bg-white">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Job Preference</h2>
@@ -101,7 +92,7 @@ export default function JobPreference() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {preferences.map((preference) => (
           <div
-            key={preference.id}
+            key={preference.id + "-employment"}
             className="border rounded-xl border-gray-200 p-4 bg-white shadow-sm"
           >
             <div className="flex flex-col">
@@ -115,9 +106,7 @@ export default function JobPreference() {
                 <div className="flex space-x-1">
                   <button
                     className="h-8 w-8 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                    onClick={() =>
-                      handleDelete(preference.id, "employmentType")
-                    }
+                    onClick={() => handleDelete(preference.id, "employmentType")}
                     aria-label="Delete"
                   >
                     <Trash2 className="h-4 w-4 text-gray-500" />
@@ -125,7 +114,7 @@ export default function JobPreference() {
 
                   <button
                     className="h-8 w-8 rounded-md bg-violet-100 hover:bg-violet-200 flex items-center justify-center transition-colors"
-                    onClick={() => handleEdit(preference.id)}
+                    onClick={() => handleEdit(preference.id, "employmentType", "Employment Type")}
                     aria-label="Edit"
                   >
                     <Pencil className="h-4 w-4 text-violet-500" />
@@ -135,9 +124,10 @@ export default function JobPreference() {
             </div>
           </div>
         ))}
+
         {preferences.map((preference) => (
           <div
-            key={preference.id}
+            key={preference.id + "-location"}
             className="border rounded-xl border-gray-200 p-4 bg-white shadow-sm"
           >
             <div className="flex flex-col">
@@ -159,7 +149,7 @@ export default function JobPreference() {
 
                   <button
                     className="h-8 w-8 rounded-md bg-violet-100 hover:bg-violet-200 flex items-center justify-center transition-colors"
-                    onClick={() => handleEdit(preference.id)}
+                    onClick={() => handleEdit(preference.id, "location", "Location")}
                     aria-label="Edit"
                   >
                     <Pencil className="h-4 w-4 text-violet-500" />
@@ -169,9 +159,10 @@ export default function JobPreference() {
             </div>
           </div>
         ))}
+
         {preferences.map((preference) => (
           <div
-            key={preference.id}
+            key={preference.id + "-shift"}
             className="border rounded-xl border-gray-200 p-4 bg-white shadow-sm"
           >
             <div className="flex flex-col">
@@ -193,7 +184,7 @@ export default function JobPreference() {
 
                   <button
                     className="h-8 w-8 rounded-md bg-violet-100 hover:bg-violet-200 flex items-center justify-center transition-colors"
-                    onClick={() => handleEdit(preference.id)}
+                    onClick={() => handleEdit(preference.id, "shift", "Shift")}
                     aria-label="Edit"
                   >
                     <Pencil className="h-4 w-4 text-violet-500" />
@@ -203,9 +194,10 @@ export default function JobPreference() {
             </div>
           </div>
         ))}
+
         {preferences.map((preference) => (
           <div
-            key={preference.id}
+            key={preference.id + "-workplace"}
             className="border rounded-xl border-gray-200 p-4 bg-white shadow-sm"
           >
             <div className="flex flex-col">
@@ -227,7 +219,7 @@ export default function JobPreference() {
 
                   <button
                     className="h-8 w-8 rounded-md bg-violet-100 hover:bg-violet-200 flex items-center justify-center transition-colors"
-                    onClick={() => handleEdit(preference.id)}
+                    onClick={() => handleEdit(preference.id, "workplace", "Workplace")}
                     aria-label="Edit"
                   >
                     <Pencil className="h-4 w-4 text-violet-500" />
@@ -248,7 +240,7 @@ export default function JobPreference() {
           >
             <div className="flex justify-between items-center border-b p-4">
               <h3 className="text-lg font-medium">
-                Edit {editingPreference ? editingPreference.label : ""}
+                Edit {editingPreference?.label}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -259,7 +251,7 @@ export default function JobPreference() {
             </div>
 
             <div className="p-4">
-              {editingPreference && editingPreference.type === "select" ? (
+              {editingPreference?.type === "select" ? (
                 <select
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                   value={tempValue}
@@ -277,9 +269,7 @@ export default function JobPreference() {
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                   value={tempValue}
                   onChange={(e) => setTempValue(e.target.value)}
-                  placeholder={`Enter ${
-                    editingPreference ? editingPreference.label : ""
-                  }`}
+                  placeholder={`Enter ${editingPreference?.label}`}
                 />
               )}
             </div>

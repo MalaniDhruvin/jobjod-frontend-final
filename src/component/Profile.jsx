@@ -42,10 +42,13 @@ const Profile = () => {
           id: item.id.toString(),
           role: item.jobTitle,
           company: item.companyName,
-          location: item.department || "Not specified", // Fallback if no location
+          department: item.department || "Not specified", // Fallback if no location
           period: `${item.startDate} - ${item.endDate || "Present"}`,
-          description: `Worked as a ${item.jobTitle} in ${item.department} department.`,
-          logo: "/placeholder.svg?height=48&width=48", // Adjust if the backend provides a logo URL
+          industry: item.industry || "Not specified", // Fallback if no location
+          employmentType: item.employmentType || "Not specified",
+          salary: item.salary || "Not specified", // Fallback if no location
+          description: ` ${item.description?item.description:"Not specified"}`,
+          
         }));
 
         setExperiences(formattedData);
@@ -69,10 +72,11 @@ const Profile = () => {
         const formattedData = response.data.map((item) => ({
           id: item.id.toString(),
           school: item.collegeName,
-          course: `${item.degree} in ${item.specialization}`,
-          grade: "A+",
-          period: `${item.completionYear}`,
-          description: `Completed ${item.degree} in ${item.specialization} from ${item.collegeName} in ${item.completionYear}.`,
+          course: `${item.degree}`,
+          specialization: `${item.specialization}`,
+          completionYear: `${item.completionYear}`,
+          description: `${item.description?item.description:"Not specified"}`,
+          highestEducation: `${item.highestEducation}`,
         }));
 
         setEducation(formattedData);
@@ -98,8 +102,8 @@ const Profile = () => {
           ({
             id: item.id.toString(),
             name: item.skill,
-            level: item.level,
-            rating: item.rating,
+            level: item.level? item.level : "not specified",
+            rating: item.rating ? item.rating : "not specified",
           })
         );
         // console.log(formattedData);
@@ -122,7 +126,7 @@ const Profile = () => {
         );
 
         // Log the full response data to inspect the structure
-        console.log("Fetched attachments:", response.data.attachment);
+        // console.log("Fetched attachments:", response.data.attachment);
 
         // Assuming the backend response is an array of attachments
         const attachments = response.data.attachment; // Adjust based on the actual response structure
@@ -144,97 +148,14 @@ const Profile = () => {
   }, []);
 
   const [attachments, setAttachments] = useState([
-    {
-      id: "file1",
-      name: "Resume-AnamoulRouf.pdf",
-      size: "2.4 MB",
-      url: "#",
-      type: "application/pdf",
-    },
-    {
-      id: "file2",
-      name: "CaseStudy-01.pdf",
-      size: "1.8 MB",
-      url: "#",
-      type: "application/msword",
-    },
-    {
-      id: "file3",
-      name: "Certificate.jpg",
-      size: "3.2 MB",
-      url: "#",
-      type: "image/jpeg",
-    },
   ]);
   const [experiences, setExperiences] = useState([
-    {
-      id: "exp1",
-      role: "Senior Frontend Developer",
-      company: "Acme Corporation",
-      location: "San Francisco, CA",
-      period: "Jan 2020 - Present",
-      description:
-        "Led the development of the company's flagship product, improving performance by 40%. Mentored junior developers and implemented best practices for code quality and testing. Collaborated with design and product teams to deliver high-quality user experiences.",
-      logo: "/placeholder.svg?height=48&width=48",
-    },
-    {
-      id: "exp2",
-      role: "Frontend Developer",
-      company: "Tech Innovations",
-      location: "Remote",
-      period: "Mar 2018 - Dec 2019",
-      description:
-        "Developed responsive web applications using React and TypeScript. Implemented state management with Redux and integrated RESTful APIs.",
-      logo: "/placeholder.svg?height=48&width=48",
-    },
   ]);
 
   const [education, setEducation] = useState([
-    {
-      id: "1",
-      school: "University of Technology",
-      course: "UX Design Fundamentals · UX Design",
-      grade: "A+",
-      period: "2020 - 2021",
-      description:
-        "This hands-on course examines how content is organized and structured to create an experience for a user, and what role the designer plays in creating and shaping user experience. You will be led through a...",
-    },
-    {
-      id: "2",
-      school: "University of Pennsylvania",
-      course: "Gamification · Game and Interactive Media Design",
-      grade: "A+",
-      period: "2019 - 2020",
-      description:
-        "Gamification is the application of game elements and digital game design techniques to non-game problems, such as business and social impact challenges. This course will teach you the mechanisms of gamification...",
-    },
   ]);
 
   const [skills, setSkills] = useState([
-    {
-      id: "skill1",
-      name: "React",
-      level: "Expert",
-      rating: 5,
-    },
-    {
-      id: "skill2",
-      name: "TypeScript",
-      level: "Advanced",
-      rating: 4,
-    },
-    {
-      id: "skill3",
-      name: "Node.js",
-      level: "Intermediate",
-      rating: 3,
-    },
-    {
-      id: "skill4",
-      name: "GraphQL",
-      level: "Intermediate",
-      rating: 3,
-    },
   ]);
 
   // Handler functions for experiences
@@ -254,8 +175,19 @@ const Profile = () => {
     );
   };
 
-  const handleDeleteExperience = (id) => {
-    setExperiences(experiences.filter((exp) => exp.id !== id));
+  const handleDeleteExperience = async(id) => {
+    const token = localStorage.getItem("authToken");
+    const userId = localStorage.getItem("userId");
+    const authHeaders = { Authorization: `Bearer ${token}` };
+    try {
+      await axios.delete(
+        `${USER_BASE_URL}/experiences/${id}`,
+        { headers: authHeaders }
+      );
+      window.location.reload(); 
+    } catch (err) {
+      console.error("Experience delete error:", err);
+    }
   };
 
   // Handler functions for education
@@ -276,8 +208,19 @@ const Profile = () => {
     );
   };
 
-  const handleDeleteEducation = (id) => {
-    setEducation(education.filter((edu) => edu.id !== id));
+  const handleDeleteEducation = async(id) => {
+    const token = localStorage.getItem("authToken");
+    const userId = localStorage.getItem("userId");
+    const authHeaders = { Authorization: `Bearer ${token}` };
+    try {
+      await axios.delete(
+        `${USER_BASE_URL}/education/${id}`,
+        { headers: authHeaders }
+      );
+      window.location.reload(); 
+    } catch (err) {
+      console.error("Education delete error:", err);
+    }
   };
 
   // Handler functions for skills
@@ -297,8 +240,19 @@ const Profile = () => {
     );
   };
 
-  const handleDeleteSkill = (id) => {
-    setSkills(skills.filter((skill) => skill.id !== id));
+  const handleDeleteSkill = async(id) => {
+    const token = localStorage.getItem("authToken");
+    const userId = localStorage.getItem("userId");
+    const authHeaders = { Authorization: `Bearer ${token}` };
+    try {
+      await axios.delete(
+        `${USER_BASE_URL}/skills/${id}`,
+        { headers: authHeaders }
+      );
+      window.location.reload(); 
+    } catch (err) {
+      console.error("Education delete error:", err);
+    }
   };
 
   // Handler functions for attachments
@@ -323,21 +277,38 @@ const Profile = () => {
   };
 
   const handleDownloadAttachment = (id) => {
+    let downloadUrl = "";
     const attachment = attachments.find((file) => file.id === id);
     if (attachment) {
       // In a real app, you would trigger a download
-      console.log(`Downloading ${attachment.name}`);
-      const link = document.createElement("a");
-      link.href = attachment.url;
-      link.download = attachment.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+      console.log(`Downloading ${attachment.fileName}`);
+      downloadUrl = `${USER_BASE_URL}/attachments/${id}/download`;
+    
+        const filename = attachment.name || attachment.fileName || "download";
+        console.log(`Downloading ${filename} from ${downloadUrl}`);
+      
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+       };
   };
 
-  const handleDeleteAttachment = (id) => {
-    setAttachments(attachments.filter((file) => file.id !== id));
+  const handleDeleteAttachment = async(id) => {
+    const token = localStorage.getItem("authToken");
+    const userId = localStorage.getItem("userId");
+    const authHeaders = { Authorization: `Bearer ${token}` };
+    try {
+      await axios.delete(
+        `${USER_BASE_URL}/attachments/resume/${id}`,
+        { headers: authHeaders }
+      );
+      window.location.reload(); 
+    } catch (err) {
+      console.error("Education delete error:", err);
+    }
   };
 
   const toggleSidebar = () => {

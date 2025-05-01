@@ -1,47 +1,77 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Star } from "lucide-react"
+import { useEffect, useState } from "react";
+import { Star } from "lucide-react";
+import axios from "axios";
+import { USER_BASE_URL } from "../config";
 
 export const SkillModal = ({
   isOpen,
   onClose,
   onSave,
   initialData,
-  isEditMode
+  isEditMode,
 }) => {
+  const token = localStorage.getItem("authToken");
+  const authHeaders = { Authorization: `Bearer ${token}` };
+
   const [formData, setFormData] = useState({
     name: "",
-    level: "Beginner",
-    rating: 1
-  })
+    level: "Beginner", // you can leave these in state but they won't be sent
+    rating: 1, // since payload is just {name}
+  });
 
   useEffect(() => {
     if (initialData) {
-      // Make sure we're not including the index in the form data
-      const { index, ...rest } = initialData
-      setFormData(rest)
+      const { index, ...rest } = initialData;
+      setFormData(rest);
     } else {
-      setFormData({
-        name: "",
-        level: "Beginner",
-        rating: 1
-      })
+      setFormData({ name: "", level: "Beginner", rating: 1 });
     }
-  }, [initialData, isOpen])
+  }, [initialData, isOpen]);
 
-  const handleSubmit = e => {
-    e.preventDefault()
-    onSave({
-      name: formData.name,
-      level: formData.level,
-      rating: Number(formData.rating)
-    })
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      let res;
+      const payload = {
+                userId: localStorage.getItem("userId"),
+                skills: [
+                  {
+                    name:   formData.name,
+                    level:  formData.level,
+                    rating: formData.rating,
+                  },
+                ],
+              };
 
-  const handleStarClick = rating => {
-    setFormData({ ...formData, rating })
-  }
+      if (isEditMode) {
+        // UPDATE existing skill by ID
+        res = await axios.put(
+          `${USER_BASE_URL}/skills/${initialData.id}`,
+          payload,
+          { headers: authHeaders }
+        );
+      } else {
+        // ADD new skill
+        res = await axios.post(`${USER_BASE_URL}/skills`, payload, {
+          headers: authHeaders,
+        });
+      }
+
+      // Pass the saved skill object back up
+      onSave(res.data);
+      onClose();
+      window.location.reload();
+    } catch (err) {
+      console.error("Skill save error:", err);
+      // you could show an error toast here
+    }
+  };
+
+  const handleStarClick = (rating) => {
+    setFormData({ ...formData, rating });
+  };
 
   return (
     <div
@@ -63,7 +93,7 @@ export const SkillModal = ({
               <input
                 type="text"
                 value={formData.name}
-                onChange={e =>
+                onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
                 className="w-full p-2 border rounded-lg"
@@ -77,7 +107,7 @@ export const SkillModal = ({
               </label>
               <select
                 value={formData.level}
-                onChange={e =>
+                onChange={(e) =>
                   setFormData({ ...formData, level: e.target.value })
                 }
                 className="w-full p-2 border rounded-lg"
@@ -92,7 +122,7 @@ export const SkillModal = ({
             <div>
               <label className="block text-sm font-medium mb-1">Rating</label>
               <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map(star => (
+                {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     type="button"
@@ -130,5 +160,5 @@ export const SkillModal = ({
         </form>
       </div>
     </div>
-  )
-}
+  );
+};

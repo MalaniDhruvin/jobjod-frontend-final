@@ -77,6 +77,7 @@ export default function ProfileContent({
   const handleAddSkillClick = () => {
     setEditingSkill(null);
     setShowSkillModal(true);
+    console.log("clicked add skill");
   };
 
   const handleEditSkillClick = (id) => {
@@ -94,7 +95,7 @@ export default function ProfileContent({
   return (
     <>
       <div className="w-full max-w-5xl lg:ml-[310px] mt-2">
-        {experiences.length > 0 && (
+        {experiences.length > 0 ? (
           <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
             <SectionHeader
               icon={<Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -108,9 +109,19 @@ export default function ProfileContent({
               onDelete={onDeleteExperience}
             />
           </div>
+        ) :(
+          <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+            <SectionHeader
+              icon={<Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />}
+              title="Experiences"
+              buttonText="Add Experience"
+              onButtonClick={handleAddExperienceClick}
+            />
+            <p>No Experience Added</p>
+          </div>
         )}
 
-        {education.length > 0 && (
+        {education.length > 0 ? (
           <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
             <SectionHeader
               icon={<Award className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -124,9 +135,19 @@ export default function ProfileContent({
               onDelete={onDeleteEducation}
             />
           </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+            <SectionHeader
+              icon={<Award className="w-4 h-4 sm:w-5 sm:h-5" />}
+              title="Education & Certifications"
+              buttonText="Add Education"
+              onButtonClick={handleAddEducationClick}
+            />
+            <p>No Education Added</p>
+          </div>
         )}
 
-        {skills.length > 0 && (
+        {skills.length > 0 ? (
           <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
             <SectionHeader
               icon={<Crown className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -140,9 +161,20 @@ export default function ProfileContent({
               onDelete={onDeleteSkill}
             />
           </div>
-        )}
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+          <SectionHeader
+            icon={<Crown className="w-4 h-4 sm:w-5 sm:h-5" />}
+            title="Skills"
+            buttonText="Add Skills"
+            onButtonClick={handleAddSkillClick}
+          />
+          <p>No Skills Added</p>
+        </div>
+        )
+          }
 
-        {attachments.length > 0 && (
+        {attachments.length > 0 ? (
           <div className="bg-white rounded-xl shadow-sm border p-6">
             <SectionHeader
               icon={<FileText className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -157,7 +189,18 @@ export default function ProfileContent({
               onDelete={onDeleteAttachment}
             />
           </div>
-        )}
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border p-6">
+            <SectionHeader
+              icon={<FileText className="w-4 h-4 sm:w-5 sm:h-5" />}
+              title="Attachments"
+              buttonText="Add File"
+              onButtonClick={handleAddFileClick}
+            />
+            <p>No Attachments Added</p>
+          </div>
+        )
+          }
 
         {/* Preference */}
         <JobPreference />
@@ -192,19 +235,19 @@ export default function ProfileContent({
         />
       )}
       {showSkillModal && (
-        <SkillModal
-          skill={editingSkill}
-          onClose={() => setShowSkillModal(false)}
-          onSave={(data) => {
-            if (editingSkill) {
-              onEditSkill(editingSkill.id, data);
-            } else {
-              onAddSkill(data);
-            }
-            setShowSkillModal(false);
-          }}
-        />
-      )}
+  <SkillModal
+    isOpen={showSkillModal}
+    initialData={editingSkill}
+    isEditMode={!!editingSkill}
+    onClose={() => setShowSkillModal(false)}
+    onSave={data => {
+      if (editingSkill) onEditSkill(editingSkill.id, data)
+      else onAddSkill(data)
+      setShowSkillModal(false)
+    }}
+  />
+)}
+
 
       {/* File Upload Modal */}
       {showFileModal && (
@@ -261,7 +304,7 @@ const ExperienceList = ({ experiences, onEdit, onDelete }) => {
             <h3 className="font-semibold text-md sm:text-base">{exp.role}</h3>
             <p className="text-xs sm:text-sm text-gray-600">{exp.company}</p>
             <p className="text-xs sm:text-sm text-gray-500">
-              {exp.location} · {exp.period}
+              {exp.employmentType} · {exp.period}
             </p>
             <p className="text-sm sm:text-sm text-gray-600 mt-1 sm:mt-2">
               {exp.description}
@@ -305,7 +348,7 @@ const EducationList = ({ education, onEdit, onDelete }) => (
           <h3 className="font-semibold text-md sm:text-base">{edu.school}</h3>
           <p className="text-xs sm:text-sm text-gray-600">{edu.course}</p>
           <p className="text-xs sm:text-sm text-gray-500">
-            Grade: {edu.grade} · {edu.period}
+            Specialization: {edu.specialization}
           </p>
           <p className="text-sm sm:text-sm text-gray-600 mt-1 sm:mt-2">
             {edu.description}

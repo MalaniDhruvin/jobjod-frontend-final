@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios"; // Import axios for API calls
 import profile from "../image/profile.jpg";
+import { USER_BASE_URL } from "../config";
 
 export default function ProfileInfo() {
   const token = localStorage.getItem("authToken"); // Retrieve token from localStorage
@@ -26,7 +27,7 @@ export default function ProfileInfo() {
     const fetchProfileData = async () => {
       try {
         const response = await axios.get(
-          `http://127.0.0.1:5000/api/users/${userId}`,
+          `${USER_BASE_URL}/users/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -106,7 +107,7 @@ export default function ProfileInfo() {
     try {
       // Call the API to save the profile data
       const response = await axios.put(
-        `http://127.0.0.1:5000/api/users/${userId}`, // Replace with your API endpoint for saving profile
+        `${USER_BASE_URL}/users/${userId}`, // Replace with your API endpoint for saving profile
         formData, // Send the updated form data
         {
           headers: {

@@ -67,83 +67,70 @@ function CompanyProfile() {
 
   useEffect(() => {
     const fetchData = async () => {
+      // 1) Fetch company overview + recognition
       try {
         console.log("Fetching data for user:", userId);
-        console.log("Token:", token); // Token check
-        console.log("URL:", `${BASE_URL}/culture/${userId}`); // URL check
-  
-        // Fetch company data
-        const companyResponse = await axios.get(
+        console.log("Token:", token);
+
+        // Company overview
+        const companyRes = await axios.get(
           `${BASE_URL}/company-overview/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        const companyData = Array.isArray(companyResponse.data)
-          ? companyResponse.data
-          : [companyResponse.data];
-        const parsedData = companyData.map((item) => ({
+        const companyArray = Array.isArray(companyRes.data)
+          ? companyRes.data
+          : [companyRes.data];
+        const parsedItems = companyArray.map(item => ({
           ...item,
           companyIndustry:
             typeof item.companyIndustry === "string"
               ? JSON.parse(item.companyIndustry || "[]")
-              : item.companyIndustry || [],
+              : item.companyIndustry || []
         }));
-        setItems(parsedData);
-  
-        // Fetch recognition data
-        const recognitionResponse = await axios.get(
+        setItems(parsedItems);
+
+        // Recognition
+        const recogRes = await axios.get(
           `${BASE_URL}/recognition/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setRecognitions(
-          Array.isArray(recognitionResponse.data)
-            ? recognitionResponse.data
-            : []
+          Array.isArray(recogRes.data) ? recogRes.data : []
         );
-  
-        // Fetch culture data with array validation
-        const cultureResponse = await axios.get(
+      } catch (err) {
+        console.error("Error fetching overview or recognition:", err);
+        setItems([]);
+        setRecognitions([]);
+      }
+
+      // 2) Fetch culture separately so its 404 won't clear items
+      try {
+        const cultureRes = await axios.get(
           `${BASE_URL}/culture/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        console.log("Culture response:", cultureResponse); // Full response
-        console.log("Culture data from API:", cultureResponse.data); // Raw data
-  
-        // Transform the single object response into an array of culture items
-        const cultureData = cultureResponse.data;
+        const data = cultureRes.data || {};
         const cultureItems = [];
-        if (cultureData) {
-          if (cultureData.companyEnvironment) {
-            cultureItems.push({
-              id: cultureData.id || 1,
-              title: "Company Environment",
-              content: cultureData.companyEnvironment,
-            });
-          }
-          if (cultureData.employeeBenefits) {
-            cultureItems.push({
-              id: cultureData.id || 2,
-              title: "Employee Benefits",
-              content: cultureData.employeeBenefits,
-            });
-          }
-          if (cultureData.careerDevelopment) {
-            cultureItems.push({
-              id: cultureData.id || 3,
-              title: "Career Development",
-              content: cultureData.careerDevelopment,
-            });
-          }
+        if (data.companyEnvironment) {
+          cultureItems.push({ id: 1, title: "Company Environment", content: data.companyEnvironment });
         }
-        console.log("Transformed culture items:", cultureItems); // Transformed data
+        if (data.employeeBenefits) {
+          cultureItems.push({ id: 2, title: "Employee Benefits", content: data.employeeBenefits });
+        }
+        if (data.careerDevelopment) {
+          cultureItems.push({ id: 3, title: "Career Development", content: data.careerDevelopment });
+        }
         setCultures(cultureItems);
-      } catch (error) {
-        console.error("Error fetching data:", error.response || error);
-        setItems([]);
-        setRecognitions([]);
-        setCultures([]); // Ensure it stays an array even on error
+      } catch (err) {
+        if (err.response?.status === 404) {
+          console.warn("No culture data found for this user");
+          setCultures([]);
+        } else {
+          console.error("Error fetching culture:", err);
+        }
       }
     };
-  
+
     fetchData();
   }, [token, userId]);
 
@@ -489,10 +476,12 @@ function CompanyProfile() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-4">
+                      {console.log(items)}
                       {items.map((item) => (
                         <div key={item.id} className="flex flex-wrap gap-2">
                           {Array.isArray(item.companyIndustry) ? (
                             item.companyIndustry.map((industry, index) => (
+                              
                               <div
                                 key={`${item.id}-${index}`}
                                 className="bg-purple-100 text-purple-800 px-4 py-2 rounded-full flex items-center"
@@ -700,7 +689,7 @@ function CompanyProfile() {
                           <div className="flex-1">
                             <div className="flex justify-between items-start">
                               <div>
-                                <h3 className="text-lg font-bold">
+                                <h3 className="text-lg font-bold text-black">
                                   {recognition.from}
                                 </h3>
                                 <div className="flex flex-wrap gap-x-4 text-sm mt-1">

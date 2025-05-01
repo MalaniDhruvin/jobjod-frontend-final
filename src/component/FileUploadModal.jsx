@@ -3,6 +3,8 @@ import { useState } from "react"
 import { Modal } from "./common/Modal"
 import { Download, FileIcon } from "lucide-react"
 import { cn } from "./Jobseeker"
+import { USER_BASE_URL } from "../config"
+import axios from "axios"
 
 export const FileUploadModal = ({ onClose, onUpload }) => {
     const [selectedFile, setSelectedFile] = useState(null)
@@ -32,13 +34,36 @@ export const FileUploadModal = ({ onClose, onUpload }) => {
         setSelectedFile(e.target.files[0])
       }
     }
-  
-    const handleSubmit = e => {
-      e.preventDefault()
-      if (selectedFile) {
-        onUpload(selectedFile)
-      }
-    }
+
+        const handleSubmit = async e => {
+          e.preventDefault()
+          if (!selectedFile) return
+      
+          // build multipart payload
+          const formData = new FormData()
+          formData.append("file", selectedFile)
+         formData.append("userId", localStorage.getItem("userId"))
+      
+          try {
+            const token = localStorage.getItem("authToken")
+            const res = await axios.post(
+              `${USER_BASE_URL}/attachments`,
+              formData,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "multipart/form-data"
+                }
+             }
+            )
+            // pass saved attachment back up
+            onUpload(res.data)
+            onClose()
+          } catch (err) {
+            console.error("File upload error:", err)
+            // optionally show error toast
+          }
+        }
   
     return (
       <Modal title="Upload File" onClose={onClose}>
