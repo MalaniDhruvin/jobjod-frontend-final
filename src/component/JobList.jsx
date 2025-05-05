@@ -101,7 +101,7 @@ export default function JobList({ jobs, isBrowseCompany }) {
       </div>
 
       <div className="space-y-4">
-        {currentJobs.map((job) => (
+        {currentJobs.length > 0 ? currentJobs.map((job) => (
           <Link to={`/Singlejobview/${job.id}`} key={job.id} className="block">
             <article className="bg-white rounded-lg shadow-md p-4 md:p-6 border border-gray-100">
               <div className="flex flex-col md:flex-row md:items-start gap-4">
@@ -164,7 +164,11 @@ export default function JobList({ jobs, isBrowseCompany }) {
               </div>
             </article>
           </Link>
-        ))}
+        )) : (
+          <div className="flex items-center justify-center h-48">
+            <p className="text-gray-500">No jobs available</p>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-center gap-2 mt-6">

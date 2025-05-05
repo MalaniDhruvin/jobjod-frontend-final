@@ -182,10 +182,6 @@ const JobListingPage = ({ isBrowseCompany }) => {
     });
   };
 
-  if (!jobs.length || !editedJob) {
-    return <div>Loading...</div>;
-  }
-
   const currentJob = jobs[selectedJob];
 
   // ----- JOB DETAILS EDIT HANDLERS -----
