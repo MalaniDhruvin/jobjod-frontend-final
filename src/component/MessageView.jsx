@@ -8,12 +8,14 @@ import useMediaQuery from "./hooks/useMediaQuery";
 import { USER_BASE_URL, BASE_URL } from "../config";
 import axios from "axios";
 
-const Messages = () => {
+const MessageView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("authToken");
   const userId = localStorage.getItem("userId");
   const userType = localStorage.getItem("userType"); // "jobseeker" or "recruiter"
+
+  const targetUserId = userType === "Super Admin" && id ? id : userId;
 
   const fetchOptions = {
     headers: {
@@ -24,7 +26,7 @@ const Messages = () => {
 
   const [activeTab, setActiveTab] = useState("focused");
   const [conversations, setConversations] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(id || null);
+  const [selectedChat, setSelectedChat] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [peerInfo, setPeerInfo] = useState({});
   const [messageText, setMessageText] = useState("");
@@ -33,19 +35,20 @@ const Messages = () => {
 
   // 1️⃣ Fetch all conversations once
   useEffect(() => {
-    if (!userId) return;
+    if (!targetUserId) return;
   
     const fetchConversationsWithPeerInfo = async () => {
       try {
-        // 1) Fetch raw conversation list
+        // 1️⃣ Fetch raw conversation list
         const convRes = await axios.get(
-          `${USER_BASE_URL}/messages/${userId}/conversations`,
+          `${USER_BASE_URL}/messages/${targetUserId}/conversations`,
           fetchOptions
         );
-        const raw =
-          Array.isArray(convRes.data) ? convRes.data : convRes.data.data || [];
+        const raw = Array.isArray(convRes.data)
+          ? convRes.data
+          : convRes.data.data || [];
   
-        // 2) Normalize into minimal objects
+        // 2️⃣ Normalize to minimal convo objects
         const convs = raw.map((c) => ({
           peerId: c.peerId,
           lastMessage: c.lastMessage,
@@ -53,36 +56,56 @@ const Messages = () => {
           online: c.online,
         }));
   
-        // 3) Decide which endpoint to call for peer info
-        const peerEndpoint =
-          userType === "Job Seeker" ? "recruiters" : "jobseekers";
+        // 3️⃣ For each convo, try user API first, then company if no data
+        const peerInfoPromises = convs.map(async (c) => {
+          // try user endpoint
+          try {
+            const userRes = await axios.get(
+              `${USER_BASE_URL}/users/${c.peerId}`,
+              fetchOptions
+            );
+            const userInfo = userRes.data.data || userRes.data;
+            if (userInfo && Object.keys(userInfo).length) {
+              return {
+                name: userInfo.fullName,
+                avatar: userInfo.avatarUrl,
+              };
+            }
+          } catch (_) { /* ignore */ }
   
-        // 4) Fire off all peer‐info requests in parallel
-        const peerInfoPromises = convs.map((c) => {
-          const url =
-            peerEndpoint === "jobseekers"
-              ? `${USER_BASE_URL}/users/${c.peerId}`
-              : `${BASE_URL}/company/${c.peerId}`;
-          return axios
-            .get(url, fetchOptions)
-            .then((r) => r.data.data || r.data)
-            .catch(() => ({}));
+          // fallback to company endpoint
+          try {
+            const compRes = await axios.get(
+              `${BASE_URL}/company/${c.peerId}`,
+              fetchOptions
+            );
+            const compInfo = compRes.data.data || compRes.data;
+            if (compInfo && Object.keys(compInfo).length) {
+              return {
+                name: compInfo.companyName,
+                avatar: compInfo.logoUrl,
+              };
+            }
+          } catch (_) { /* ignore */ }
+  
+          // last‐resort empty
+          return { name: "Unknown", avatar: Avatar };
         });
   
         const peers = await Promise.all(peerInfoPromises);
   
-        // 5) Merge peer info back onto conversations
+        // 4️⃣ Zip them back into your conversation list
         const enriched = convs.map((c, i) => ({
-          id: c.peerId,                      // so your <div key={conv.id}> still works
+          id: c.peerId,
           peerId: c.peerId,
-          title: peers[i].fullName || peers[i].companyName || "Unknown",
-          avatarUrl: peers[i].avatarUrl || peers[i].logoUrl || Avatar,
+          title: peers[i].name,
+          avatarUrl: peers[i].avatar,
           online: c.online,
           lastMessage: c.lastMessage,
           lastTimestamp: c.lastTimestamp,
         }));
   
-        // 6) Update state in one shot
+        // 5️⃣ Commit to state
         setConversations(enriched);
       } catch (err) {
         console.error("Error fetching conversations:", err);
@@ -90,23 +113,18 @@ const Messages = () => {
     };
   
     fetchConversationsWithPeerInfo();
-  }, [userId, userType, token]);
+  }, [targetUserId, token]);
   
-
-  // 2️⃣ Keep URL / state in sync if you landed directly via /Messages/:id
-  useEffect(() => {
-    if (id) setSelectedChat(id);
-  }, [id]);
 
   // 3️⃣ Whenever you select a chat, load its messages + peerInfo
   useEffect(() => {
-    if (!selectedChat || !userId) return;
-
-    // -- messages --
+    if (!selectedChat || !targetUserId) return;
+  
+    // 1️⃣ Fetch messages
     setChatMessages([]);
     axios
       .get(
-        `${USER_BASE_URL}/messages/${userId}/conversations/${selectedChat}/messages`,
+        `${USER_BASE_URL}/messages/${targetUserId}/conversations/${selectedChat}/messages`,
         fetchOptions
       )
       .then((res) => {
@@ -114,35 +132,40 @@ const Messages = () => {
         setChatMessages(msgs);
       })
       .catch(console.error);
-
-    // -- peer info --
-    const peerEndpoint =
-      userType === "Job Seeker" ? "recruiters" : "jobseekers";
-
-      if(peerEndpoint === "jobseekers"){
-    axios
-      .get(`${USER_BASE_URL}/users/${selectedChat}`, fetchOptions)
-      .then((res) => {
-        // some APIs wrap payload in .data:
-        const info = res.data.data || res.data;
-        setPeerInfo(info);
-      })
-      .catch(console.error)}
-      else{
-        axios
-      .get(`${BASE_URL}/company/${selectedChat}`, fetchOptions)
-      .then((res) => {
-        // some APIs wrap payload in .data:
-        console.log(res.data)
-        const info = res.data.data || res.data;
-        setPeerInfo(info);
-      })
-      .catch(console.error);
+  
+    // 2️⃣ Fetch peerInfo: try users first, then company
+    (async () => {
+      try {
+        // Try jobseeker endpoint
+        const userRes = await axios.get(
+          `${USER_BASE_URL}/users/${selectedChat}`,
+          fetchOptions
+        );
+        const userInfo = userRes.data.data || userRes.data || null;
+  
+        if (userInfo) {
+          setPeerInfo(userInfo);
+          return;
+        }
+      } catch (err) {
+        // ignore and fall back
       }
-      
-  }, [selectedChat, userId, userType]);
+  
+      try {
+        // Fallback to company endpoint
+        const compRes = await axios.get(
+          `${BASE_URL}/company/${selectedChat}`,
+          fetchOptions
+        );
+        const compInfo = compRes.data.data || compRes.data || {};
+        setPeerInfo(compInfo);
+      } catch (err) {
+        console.error("Error fetching company info:", err);
+      }
+    })();
+  }, [selectedChat, targetUserId, token]);
+  
 
-  // Helpers
   const formatTime = (ts) =>
     ts
       ? new Date(ts).toLocaleTimeString([], {
@@ -169,7 +192,7 @@ const Messages = () => {
 
   const openChat = (convId) => {
     setSelectedChat(convId);
-    if (id) navigate(`/Messages/${convId}`);
+    // if (id) navigate(`/messageView/${convId}`);
   };
   const closeChat = () => {
     setSelectedChat(null);
@@ -194,9 +217,7 @@ const Messages = () => {
           <span
             key={tab}
             className={`px-2 py-1 rounded-full mr-4 cursor-pointer ${
-              activeTab === tab
-                ? "bg-blue-100 text-blue-600"
-                : "text-gray-500"
+              activeTab === tab ? "bg-blue-100 text-blue-600" : "text-gray-500"
             }`}
             onClick={() => setActiveTab(tab)}
           >
@@ -210,9 +231,7 @@ const Messages = () => {
           const avatar = isActive
             ? peerInfo.avatarUrl || Avatar
             : conv.avatarUrl || Avatar;
-          const title = isActive
-            ? peerInfo.fullName || conv.title
-            : conv.title;
+          const title = isActive ? peerInfo.fullName || conv.title : conv.title;
           return (
             <div
               key={conv.id}
@@ -231,9 +250,7 @@ const Messages = () => {
               </div>
               <div className="ml-3 flex-1">
                 <div className="flex justify-between">
-                  <p className="font-medium text-gray-900 truncate">
-                    {title}
-                  </p>
+                  <p className="font-medium text-gray-900 truncate">{title}</p>
                   <p className="text-xs text-gray-500">
                     {formatTime(conv.lastTimestamp)}
                   </p>
@@ -262,7 +279,9 @@ const Messages = () => {
           alt="avatar"
         />
         <div>
-          <p className="font-medium">{peerInfo.fullName || peerInfo.companyName}</p>
+          <p className="font-medium">
+            {peerInfo.fullName || peerInfo.companyName}
+          </p>
           <p className="text-xs text-gray-500">
             {peerInfo.online ? "online" : "offline"}
           </p>
@@ -272,9 +291,7 @@ const Messages = () => {
         {chatMessages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex mb-4 ${
-              msg.sender === "me" ? "justify-end" : ""
-            }`}
+            className={`flex mb-4 ${msg.sender === "me" ? "justify-end" : ""}`}
           >
             {msg.sender !== "me" && (
               <img
@@ -285,15 +302,17 @@ const Messages = () => {
             )}
             <div
               className={`${
-                msg.sender === "me"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200"
+                msg.sender === "me" ? "bg-blue-500 text-white" : "bg-gray-200"
               } p-3 rounded-2xl max-w-xs`}
             >
               {msg.text || msg.message}
             </div>
             {msg.sender === "me" && (
-              <img className="w-8 h-8 rounded-full ml-2" src={Avatar} alt="avatar" />
+              <img
+                className="w-8 h-8 rounded-full ml-2"
+                src={Avatar}
+                alt="avatar"
+              />
             )}
           </div>
         ))}
@@ -352,4 +371,4 @@ const Messages = () => {
   );
 };
 
-export default Messages;
+export default MessageView;

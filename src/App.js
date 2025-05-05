@@ -1,12 +1,14 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginPage from "./component/LoginPage";
+import AdminLogin from "./component/SuperAdmin/AdminLogin";
 // import Signup from "./component/Signup";
 import CompanyDashboard from "./component/CompanyDashboard";
 import Jobseeker from "./component/Jobseeker";
 import Job from "./component/Job";
 import Profile from "./component/Profile";
 import Message from "./component/Message";
+import MessageView from "./component/MessageView";
 import Home from "./component/Home";
 import JobListingPage from "./component/JobListingPage";
 import JobseekersSubSection from "./component/JobseekersSubSection";
@@ -42,12 +44,16 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/Login_Signin" element={<Login_Signin />} />
           <Route path="/LoginPage" element={<LoginPage />} />
+          <Route path="/AdminLogin" element={<AdminLogin />} />
           {/* <Route path="/Signup" element={<Signup  />} />  */}
           <Route path="/Jobseeker" element={<Jobseeker />} />
           <Route path="/Job" element={<Job />} />
+          <Route path="/Job/:id" element={<Job />} />
           <Route path="/Profile" element={<Profile />} />
+          <Route path="/Profile/:id" element={<Profile />} />
           <Route path="/Message" element={<Message />} />
           <Route path="/Message/:id" element={<Message />} />
+          <Route path="/messageView/:id" element={<MessageView />} />
           <Route path="/Singlejobview/:jobId" element={<Singlejobview />} />
           <Route path="/JobListingPage" element={<JobListingPage />} />
           <Route
@@ -68,7 +74,9 @@ function App() {
             element={<CompanyApplications />}
           />
           <Route path="/CompanyProfile" element={<CompanyProfile />} />
+          <Route path="/CompanyProfile/:id" element={<CompanyProfile />} />
           <Route path="/CompanyPostJobs" element={<CompanyPostJobs />} />
+          <Route path="/CompanyPostJobs/:id" element={<CompanyPostJobs />} />
           <Route path="/FormJobseeker" element={<FormJobseeker />} />
           <Route path="/FormJobseeker2" element={<FormJobseeker2 />} />
           <Route path="/FormJobseeker3" element={<FormJobseeker3 />} />

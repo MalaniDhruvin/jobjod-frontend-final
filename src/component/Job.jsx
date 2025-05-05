@@ -15,6 +15,7 @@ import crown from "../image/crown.png"
 import List from "../image/List-list.png"
 import tick from "../image/tick.png"
 import star from "../image/star.png"
+import { useParams } from "react-router-dom";
 import Jobseekerheader from "./Jobseekerheader"
 import { IoMail } from "react-icons/io5"
 import { LiaShareAltSolid } from "react-icons/lia"
@@ -43,6 +44,7 @@ const JobDetails = ({ selectedJobId }) => {
   const tabs = ["Application Status", "Job Description"]
   const tabsContainerRef = useRef(null)
   const activeTabRef = useRef(null)
+  const { id: paramUserId } = useParams();
 
   // Scroll active tab into view when it changes
   useEffect(() => {
@@ -125,6 +127,8 @@ const JobDetails = ({ selectedJobId }) => {
       try {
         const userId = localStorage.getItem("userId")
         const token = localStorage.getItem("authToken")
+
+        const UserId = paramUserId ? paramUserId : userId;
         const fetchOptions = {
           headers: {
             "Content-Type": "application/json",
@@ -132,7 +136,7 @@ const JobDetails = ({ selectedJobId }) => {
           }
         }
         const res = await fetch(
-          `${USER_BASE_URL}/users/appliedFor/${selectedJobId}/apply/${userId}`,
+          `${USER_BASE_URL}/users/appliedFor/${selectedJobId}/apply/${UserId}`,
           fetchOptions
         )
         const data = await res.json()
@@ -422,6 +426,9 @@ const ApplicationsList = ({ filter = "All Jobs", onJobSelect }) => {
   const [applications, setApplications] = useState([]);
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("authToken");
+  const { id: paramUserId } = useParams();
+
+  const UserId = paramUserId ? paramUserId : userId;
   const fetchOptions = {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -435,7 +442,7 @@ const ApplicationsList = ({ filter = "All Jobs", onJobSelect }) => {
     const fetchUserDetails = async () => {
       try {
         // Retrieve user details with appliedFor array
-        const res = await fetch(`${USER_BASE_URL}/users/${userId}`, fetchOptions);
+        const res = await fetch(`${USER_BASE_URL}/users/${UserId}`, fetchOptions);
         const data = await res.json();
         // console.log("User Details:", data);
         // The API returns applications with only id, status, and appliedOn.

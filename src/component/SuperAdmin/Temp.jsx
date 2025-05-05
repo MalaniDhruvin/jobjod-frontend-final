@@ -7,179 +7,170 @@ import {
   ChevronRight,
   ChevronDown,
   AlignJustify,
-  X
-} from "lucide-react"
-import { Link } from "react-router-dom"
-import { useState } from "react"
+  X,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { BASE_URL } from "../../config";
 
 export default function JobListings() {
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState({
     location: "",
     jobType: "",
     salary: "",
-    status: ""
-  })
-  const [searchQuery, setSearchQuery] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [jobsPerPage] = useState(3) // Show 3 jobs per page
+    status: "",
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const userId = localStorage.getItem("userId");
+  const token = localStorage.getItem("authToken");
+  const [jobs, setJobs] = useState([]);
+  const [jobsPerPage] = useState(3); // Show 3 jobs per page
 
   // Sample job data
-  const jobListings = [
-    {
-      id: 1,
-      logo: (
-        <div className="bg-blue-600 p-2 rounded-lg">
-          <div className="w-6 h-6 bg-white/30 rounded-full"></div>
-        </div>
-      ),
-      company: "Linear company",
-      title: "Software Engineer",
-      isNew: true,
-      location: "Brussels",
-      type: "Full time",
-      salary: "50-55k",
-      timeAgo: "29 min ago",
-      status: "active"
-    },
-    {
-      id: 2,
-      logo: (
-        <div className="bg-white border border-gray-200 p-2 rounded-lg flex items-center justify-center">
-          <span className="text-xl font-bold">N</span>
-        </div>
-      ),
-      company: "Notion",
-      title: "Junior UI Designer",
-      location: "Madrid",
-      type: "Full time",
-      salary: "30-32k",
-      timeAgo: "1 day ago",
-      status: "active"
-    },
-    {
-      id: 3,
-      logo: (
-        <div className="bg-purple-600 p-2 rounded-lg">
-          <div className="w-6 h-6 bg-gradient-to-br from-pink-500 to-blue-500 rounded-full"></div>
-        </div>
-      ),
-      company: "Spline studio",
-      title: "Technical Support Engineer",
-      location: "United States",
-      type: "Full time",
-      salary: "50-52k",
-      timeAgo: "1 day ago",
-      status: "inactive"
-    },
-    {
-      id: 4,
-      logo: (
-        <div className="bg-red-600 p-2 rounded-lg">
-          <div className="w-6 h-6 bg-white/30 rounded-sm rotate-45"></div>
-        </div>
-      ),
-      company: "Raycast corp",
-      title: "Product Designer",
-      location: "London",
-      type: "Full time",
-      salary: "40-42k",
-      timeAgo: "2 day ago",
-      status: "inactive"
-    },
-    {
-      id: 5,
-      logo: (
-        <div className="bg-blue-500 p-2 rounded-lg">
-          <div className="w-6 h-6 bg-white/30 rounded-full flex items-center justify-center">
-            <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-          </div>
-        </div>
-      ),
-      company: "Loom",
-      title: "Copywriter (Growth)",
-      location: "London",
-      type: "Full time",
-      salary: "38-40k",
-      timeAgo: "3 day ago",
-      status: "active"
-    },
-    {
-      id: 6,
-      logo: (
-        <div className="bg-emerald-500 p-2 rounded-lg">
-          <div className="w-6 h-6 bg-white/30 rounded-full"></div>
-        </div>
-      ),
-      company: "Trainline group",
-      title: "Senior UX/UI Designer",
-      location: "Paris",
-      type: "Full time",
-      salary: "38-40k",
-      timeAgo: "4 day ago",
-      status: "inactive"
+
+useEffect(() => {
+  const fetchAllJobs = async () => {
+    console.log("🔄 Starting fetchAllJobs…", { userId, token });
+    // setIsLoading(true);
+
+    try {
+      // 1) Fetch base job list
+      const resp = await axios.get(`${BASE_URL}/jobs`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("📄 Raw jobList response:", resp);
+      const jobList = resp.data;
+      console.log("📋 Parsed jobList:", jobList);
+
+      // If jobList is empty or not an array, bail early
+      if (!Array.isArray(jobList) || jobList.length === 0) {
+        console.warn("⚠️ jobList is empty or not an array");
+        setJobs([]);
+        return;
+      }
+
+      // 2) Enrich each job
+      const enriched = await Promise.all(
+        jobList.map(async (job, idx) => {
+          console.log(`🔍 Enriching job[${idx}]`, job);
+          try {
+            const [
+              { data: companyDetails },
+              { data: companyOverview },
+              { data: workingHours },
+              { data: locationInfo },
+            ] = await Promise.all([
+              axios.get(`${BASE_URL}/company/${job.userId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              }),
+              axios.get(`${BASE_URL}/company-overview/${job.id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              }),
+              axios.get(`${BASE_URL}/job-schedule/${job.id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              }),
+              axios.get(`${BASE_URL}/requirements/${job.id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              }),
+            ]);
+
+            console.log("   → companyDetails:", companyDetails);
+            console.log("   → companyOverview:", companyOverview);
+            console.log("   → workingHours:", workingHours);
+            console.log("   → locationInfo:", locationInfo);
+
+            // Compute timeAgo
+            const created = new Date(job.createdAt);
+            const diffH = Math.floor((Date.now() - created) / 36e5);
+            const timeAgo = diffH < 24 ? `${diffH}h ago` : `${Math.floor(diffH/24)}d ago`;
+
+            // Build enriched object
+            return {
+              id:          job.id,
+              company:     companyDetails.companyName,
+              logoLetter:  companyDetails.companyName.charAt(0).toUpperCase(),
+              overview:    companyOverview.overview,
+              title:       JSON.parse(job.jobTitle).label,
+              isNew:       job.isNew,
+              location:    locationInfo.candidateLocations?.[0] || "—",
+              type:        workingHours.jobTiming,
+              salary:      `${job.minSalary}-${job.maxSalary} INR`,
+              timeAgo,
+              status:      Math.random()>0.5?"active":"inactive"
+            };
+          } catch (innerErr) {
+            console.error("   ❌ Error enriching job:", innerErr);
+            return null;
+          }
+        })
+      );
+
+      console.log("🛠️ Enriched array before filter:", enriched);
+      const filteredEnriched = enriched.filter(Boolean);
+      console.log("✅ Final enriched jobs:", filteredEnriched);
+      setJobs(filteredEnriched);
+    } catch (err) {
+      console.error("❌ Error loading jobs:", err);
+      setJobs([]);
     }
-  ]
+  };
+
+  fetchAllJobs();
+}, [userId, token]);
+
 
   const toggleFilter = () => {
-    setIsFilterOpen(!isFilterOpen)
-  }
+    setIsFilterOpen(!isFilterOpen);
+  };
 
-  const handleFilterChange = e => {
-    const { name, value } = e.target
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
     setFilters({
       ...filters,
-      [name]: value
-    })
-  }
+      [name]: value,
+    });
+  };
 
   const clearFilters = () => {
     setFilters({
       location: "",
       jobType: "",
       salary: "",
-      status: ""
-    })
-  }
+      status: "",
+    });
+  };
 
-  const handleSearchChange = e => {
-    setSearchQuery(e.target.value)
-  }
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
 
   // Filter jobs based on selected filters and search query
-  const filteredJobs = jobListings.filter(job => {
-    // Check if job matches all selected filters
-    const matchesLocation =
-      !filters.location || job.location === filters.location
-    const matchesJobType = !filters.jobType || job.type === filters.jobType
-    const matchesSalary = !filters.salary || job.salary.includes(filters.salary)
-    const matchesStatus = !filters.status || job.status === filters.status
-
-    // Check if job matches search query
-    const matchesSearch =
-      !searchQuery ||
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.company.toLowerCase().includes(searchQuery.toLowerCase())
-
+  const filteredJobs = jobs.filter((job) => {
     return (
-      matchesLocation &&
-      matchesJobType &&
-      matchesSalary &&
-      matchesStatus &&
-      matchesSearch
-    )
-  })
+      (!filters.location || job.location === filters.location) &&
+      (!filters.jobType || job.type === filters.jobType) &&
+      (!filters.salary || job.salary.includes(filters.salary)) &&
+      (!filters.status || job.status === filters.status) &&
+      (!searchQuery ||
+        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.company.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  });
 
   // Calculate pagination
-  const indexOfLastJob = currentPage * jobsPerPage
-  const indexOfFirstJob = indexOfLastJob - jobsPerPage
-  const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob)
-  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage)
+  const indexOfLastJob = currentPage * jobsPerPage;
+  const indexOfFirstJob = indexOfLastJob - jobsPerPage;
+  const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
+  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
 
   // Change page
-  const paginate = pageNumber => setCurrentPage(pageNumber)
-  const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages))
-  const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1))
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const nextPage = () =>
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
   return (
     <div className="min-h-20 mx-auto p-3 sm:p-4 bg-white rounded-lg shadow-sm">
@@ -213,7 +204,9 @@ export default function JobListings() {
       {isFilterOpen && (
         <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-gray-800 "><span className="hidden">Filters</span></h3>
+            <h3 className="font-medium text-gray-800 ">
+              <span className="hidden">Filters</span>
+            </h3>
             <button
               onClick={toggleFilter}
               className="text-gray-500 hover:text-gray-700"
@@ -316,19 +309,26 @@ export default function JobListings() {
 
       {/* Job Listings */}
       <div className="space-y-4">
+        {console.log("Filtered Jobs:", jobs)}
         {currentJobs.length > 0 ? (
-          currentJobs.map(job => (
+          currentJobs.map((job) => (
             <JobCard
               key={job.id}
-              logo={job.logo}
+              id={job.id}
+              logo={
+                <div className="bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center">
+                  <span className="font-bold">{job.logoLetter}</span>
+                </div>
+              }
               company={job.company}
               title={job.title}
               isNew={job.isNew}
               location={job.location}
-              type={job.type}
+              type={job.type} // now shows working hours
               salary={job.salary}
               timeAgo={job.timeAgo}
               status={job.status}
+              overview={job.overview}
             />
           ))
         ) : (
@@ -359,15 +359,15 @@ export default function JobListings() {
 
           {Array.from({ length: Math.min(5, totalPages) }).map((_, index) => {
             // Show pages around current page
-            let pageNumber
+            let pageNumber;
             if (totalPages <= 5) {
-              pageNumber = index + 1
+              pageNumber = index + 1;
             } else if (currentPage <= 3) {
-              pageNumber = index + 1
+              pageNumber = index + 1;
             } else if (currentPage >= totalPages - 2) {
-              pageNumber = totalPages - 4 + index
+              pageNumber = totalPages - 4 + index;
             } else {
-              pageNumber = currentPage - 2 + index
+              pageNumber = currentPage - 2 + index;
             }
 
             return (
@@ -382,7 +382,7 @@ export default function JobListings() {
               >
                 {pageNumber}
               </button>
-            )
+            );
           })}
 
           <button
@@ -397,7 +397,7 @@ export default function JobListings() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function JobCard({
@@ -409,10 +409,12 @@ function JobCard({
   type,
   salary,
   timeAgo,
-  status
+  overview,
+  status,
+  id
 }) {
   return (
-    <Link to="/Singlejobview">
+    <Link to={`/Singlejobview/${id}`}>
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4 border border-gray-100 rounded-lg hover:shadow-md transition-shadow">
         <div className="flex-shrink-0 w-12 h-12">{logo}</div>
         <div className="flex-1">
@@ -461,12 +463,10 @@ function JobCard({
           </div>
 
           <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-500 line-clamp-2 sm:line-clamp-none">
-            Mollit in laborum tempor Lorem incididunt irure. Aute eu ex ad sunt.
-            Pariatur sint culpa do incididunt eiusmod eiusmod culpa. laborum
-            tempor Lorem incididunt.
+            {overview}
           </p>
         </div>
       </div>
     </Link>
-  )
+  );
 }

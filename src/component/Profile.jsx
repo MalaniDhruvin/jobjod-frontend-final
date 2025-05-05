@@ -7,6 +7,7 @@ import { ProfileSidebar } from "../component/ProfileSidebar";
 import { ProfileInfo } from "../component/ProfileInfo";
 import Jobseekerheader from "./Jobseekerheader";
 import axios from "axios";
+import { useParams } from "react-router-dom";
 import { USER_BASE_URL } from "../config";
 
 const profileData = {
@@ -23,6 +24,9 @@ const profileData = {
 const Profile = () => {
   const token = localStorage.getItem("authToken"); // Retrieve token from localStorage
   const userId = localStorage.getItem("userId");
+  const { id: paramUserId } = useParams();
+
+  const UserId = paramUserId ? paramUserId : userId;
 
   const [activeTab, setActiveTab] = useState("Information");
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
@@ -31,7 +35,7 @@ const Profile = () => {
     const fetchExperiences = async () => {
       try {
         const response = await axios.get(
-          `${USER_BASE_URL}/experiences/${userId}`,
+          `${USER_BASE_URL}/experiences/${UserId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -60,7 +64,7 @@ const Profile = () => {
     const fetchEducation = async () => {
       try {
         const response = await axios.get(
-          `${USER_BASE_URL}/education/${userId}`,
+          `${USER_BASE_URL}/education/${UserId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -87,7 +91,7 @@ const Profile = () => {
     const fetchSkills = async () => {
       try {
         const response = await axios.get(
-          `${USER_BASE_URL}/skills/${userId}`,
+          `${USER_BASE_URL}/skills/${UserId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -117,7 +121,7 @@ const Profile = () => {
     const fetchAttachment = async () => {
       try {
         const response = await axios.get(
-          `${USER_BASE_URL}/attachments/${userId}`,
+          `${USER_BASE_URL}/attachments/${UserId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import axios from "axios"; // Import axios for API calls
 import profile from "../image/profile.jpg";
+import { useParams } from "react-router-dom";
 import { USER_BASE_URL } from "../config";
 
 export default function ProfileInfo() {
   const token = localStorage.getItem("authToken"); // Retrieve token from localStorage
   const userId = localStorage.getItem("userId");
+  const { id: paramUserId } = useParams();
+
+  const UserId = paramUserId ? paramUserId : userId;
 
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -27,7 +31,7 @@ export default function ProfileInfo() {
     const fetchProfileData = async () => {
       try {
         const response = await axios.get(
-          `${USER_BASE_URL}/users/${userId}`,
+          `${USER_BASE_URL}/users/${UserId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

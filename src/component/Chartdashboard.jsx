@@ -56,7 +56,7 @@ const AnimatedLineChart = ({ color, data, width = 100, height = 40 }) => {
 // Metric card component with animated counter
 const MetricCard = ({ title, value, change, changeColor, chartColor, chartData }) => {
   const [displayValue, setDisplayValue] = useState("0")
-  const numericValue = Number.parseInt(value.replace(/,/g, ""))
+  const numericValue = Number.parseInt(value)
 
   useEffect(() => {
     // Animate the counter
@@ -105,7 +105,7 @@ const MetricCard = ({ title, value, change, changeColor, chartColor, chartData }
   )
 }
 
-export default function RecruitmentDashboard() {
+export default function RecruitmentDashboard({count, meeting, hired, totalApps, timeSeries, jobPct, appPct, meetingPct, hiringPct}) {
   // Sample data for charts - upward trend
   const jobPostsData = [15, 10, 20, 8, 15, 25, 18, 10, 20, 25]
 
@@ -123,39 +123,39 @@ export default function RecruitmentDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Job Posts"
-          value="2,456"
-          change="+2.5%"
-          changeColor="text-purple-500"
+          value={count}
+          change={jobPct}
+          changeColor={jobPct >= 0 ? "text-green-500" : "text-red-500"}
           chartColor="#a78bfa"
-          chartData={jobPostsData}
+          chartData={timeSeries.jobs.map((d) => d.count)}
         />
 
         <MetricCard
           title="Total Application"
-          value="4,561"
-          change="-4.4%"
-          changeColor="text-red-500"
+          value={totalApps}
+          change={appPct}
+          changeColor={jobPct >= 0 ? "text-green-500" : "text-red-500"}
           chartColor="#ef4444"
-          chartData={applicationsData}
+          chartData={timeSeries.applications.map((d) => d.count)}
         />
 
         <MetricCard
           title="No of Meetings"
-          value="125"
-          change="+1.5%"
-          changeColor="text-orange-300"
+          value={meeting}
+          change={meetingPct}
+          changeColor={jobPct >= 0 ? "text-green-500" : "text-red-500"}
           chartColor="#fdba74"
-          chartData={meetingsData}
+          chartData={timeSeries.meetings.map((d) => d.count)}
         />
 
         <MetricCard
           
           title="No of Hirings"
-          value="2,456"
-          change="+4.5%"
-          changeColor="text-black "
+          value={hired}
+          change={hiringPct}
+          changeColor={jobPct >= 0 ? "text-green-500" : "text-red-500"}
           chartColor="#000000"
-          chartData={hiringsData}
+          chartData={timeSeries.hires.map((d) => d.count)}
         />
       </div>
     </div>

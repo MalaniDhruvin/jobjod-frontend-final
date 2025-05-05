@@ -15,11 +15,15 @@ import { RecognitionModal } from "./RecognitionModal";
 import { CultureModal } from "./CultureModal";
 import LegalDocuments from "./LegalDocuments";
 import axios from "axios";
+import { useParams } from "react-router-dom";
 import { BASE_URL } from "../config";
 
 function CompanyProfile() {
   const token = localStorage.getItem("authToken");
   const userId = localStorage.getItem("userId");
+  const { id } = useParams(); // Extracting the ID from the URL parameters
+
+  const UserId = id ? id : userId; 
 
   const [items, setItems] = useState([]);
   const [showAddIndustryModal, setShowAddIndustryModal] = useState(false);
@@ -29,10 +33,12 @@ function CompanyProfile() {
   const [showAddRecognitionModal, setShowAddRecognitionModal] = useState(false);
   const [showCultureModal, setShowCultureModal] = useState(false);
   const [showEditCultureModal, setShowEditCultureModal] = useState(false);
-  const [showEditRecognitionModal, setShowEditRecognitionModal] = useState(false);
+  const [showEditRecognitionModal, setShowEditRecognitionModal] =
+    useState(false);
   const [recognitions, setRecognitions] = useState([]);
   const [name, setName] = useState({
-    name:"",location:""
+    name: "",
+    location: "",
   });
   const [industries, setIndustries] = useState([
     { id: "1", name: "Information Technology" },
@@ -42,17 +48,20 @@ function CompanyProfile() {
     {
       id: "1",
       title: "Overview",
-      content: "ShareTrip is the country's first and pioneer online travel aggregator...",
+      content:
+        "ShareTrip is the country's first and pioneer online travel aggregator...",
     },
     {
       id: "2",
       title: "Vision",
-      content: "ShareTrip is the country's first and pioneer online travel aggregator...",
+      content:
+        "ShareTrip is the country's first and pioneer online travel aggregator...",
     },
     {
       id: "3",
       title: "Mission",
-      content: "ShareTrip is the country's first and pioneer online travel aggregator...",
+      content:
+        "ShareTrip is the country's first and pioneer online travel aggregator...",
     },
   ]);
   const [cultures, setCultures] = useState([]); // Already an empty array
@@ -74,29 +83,26 @@ function CompanyProfile() {
 
         // Company overview
         const companyRes = await axios.get(
-          `${BASE_URL}/company-overview/${userId}`,
+          `${BASE_URL}/company-overview/${UserId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const companyArray = Array.isArray(companyRes.data)
           ? companyRes.data
           : [companyRes.data];
-        const parsedItems = companyArray.map(item => ({
+        const parsedItems = companyArray.map((item) => ({
           ...item,
           companyIndustry:
             typeof item.companyIndustry === "string"
               ? JSON.parse(item.companyIndustry || "[]")
-              : item.companyIndustry || []
+              : item.companyIndustry || [],
         }));
         setItems(parsedItems);
 
         // Recognition
-        const recogRes = await axios.get(
-          `${BASE_URL}/recognition/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setRecognitions(
-          Array.isArray(recogRes.data) ? recogRes.data : []
-        );
+        const recogRes = await axios.get(`${BASE_URL}/recognition/${UserId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setRecognitions(Array.isArray(recogRes.data) ? recogRes.data : []);
       } catch (err) {
         console.error("Error fetching overview or recognition:", err);
         setItems([]);
@@ -105,21 +111,42 @@ function CompanyProfile() {
 
       // 2) Fetch culture separately so its 404 won't clear items
       try {
-        const cultureRes = await axios.get(
-          `${BASE_URL}/culture/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const data = cultureRes.data || {};
+        const cultureRes = await axios.get(`${BASE_URL}/culture/${UserId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const dataArray = Array.isArray(cultureRes.data)
+          ? cultureRes.data
+          : [cultureRes.data];
+
         const cultureItems = [];
-        if (data.companyEnvironment) {
-          cultureItems.push({ id: 1, title: "Company Environment", content: data.companyEnvironment });
-        }
-        if (data.employeeBenefits) {
-          cultureItems.push({ id: 2, title: "Employee Benefits", content: data.employeeBenefits });
-        }
-        if (data.careerDevelopment) {
-          cultureItems.push({ id: 3, title: "Career Development", content: data.careerDevelopment });
-        }
+
+        dataArray.forEach((record) => {
+          if (record.companyEnvironment) {
+            cultureItems.push({
+              id: record.id, // unique per record + field
+              title: "Company Environment",
+              content: record.companyEnvironment,
+              recordId: record.id,
+            });
+          }
+          if (record.employeeBenefits) {
+            cultureItems.push({
+              id: record.id,
+              title: "Employee Benefits",
+              content: record.employeeBenefits,
+              recordId: record.id,
+            });
+          }
+          if (record.careerDevelopment) {
+            cultureItems.push({
+              id: record.id,
+              title: "Career Development",
+              content: record.careerDevelopment,
+              recordId: record.id,
+            });
+          }
+        });
+
         setCultures(cultureItems);
       } catch (err) {
         if (err.response?.status === 404) {
@@ -137,13 +164,20 @@ function CompanyProfile() {
   // Culture API functions
   const addCulture = async (newCulture) => {
     try {
-      const response = await axios.post(
-        `${BASE_URL}/culture`,
-        { userId, ...newCulture },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const payload = {
+        userId,
+        companyEnvironment: newCulture.title, // title → companyEnvironment
+        employeeBenefits: newCulture.content, // content → employeeBenefits
+        careerDevelopment: newCulture.careerDevelopment || "Not specified", // or optional fallback
+      };
+
+      const response = await axios.post(`${BASE_URL}/culture`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       setCultures((prev) => [...prev, response.data]);
       setShowCultureModal(false);
+      window.location.reload(); // Reload the page to fetch updated data
     } catch (error) {
       console.error("Error adding culture:", error);
     }
@@ -151,7 +185,7 @@ function CompanyProfile() {
 
   const updateCulture = async (updatedCulture) => {
     try {
-      const response = await axios.put(
+      const response = await axios.patch(
         `${BASE_URL}/culture/${updatedCulture.id}`,
         { userId, ...updatedCulture },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -162,19 +196,31 @@ function CompanyProfile() {
         )
       );
       setShowEditCultureModal(false);
+      window.location.reload();
     } catch (error) {
       console.error("Error updating culture:", error);
     }
   };
 
-  const deleteCulture = async (id) => {
+  const deleteCulture = async (id, title) => {
     try {
-      await axios.delete(`${BASE_URL}/culture/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCultures((prev) => prev.filter((culture) => culture.id !== id));
+      const fieldMap = {
+        "Company Environment": "companyEnvironment",
+        "Employee Benefits": "employeeBenefits",
+        "Career Development": "careerDevelopment",
+      };
+      const field = fieldMap[title];
+
+      const res = await axios.delete(
+        `${BASE_URL}/culture/${id}?field=${field}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Update local state to whatever the server returns
+      setCultures(res.data.data);
+      window.location.reload(); // Reload the page to fetch updated data
     } catch (error) {
-      console.error("Error deleting culture:", error);
+      console.error("Error clearing culture field:", error);
     }
   };
 
@@ -203,6 +249,7 @@ function CompanyProfile() {
       }
       setNewIndustry("");
       setShowAddIndustryModal(false);
+      window.location.reload();
     } catch (error) {
       console.error("Error adding industry:", error);
     }
@@ -481,7 +528,6 @@ function CompanyProfile() {
                         <div key={item.id} className="flex flex-wrap gap-2">
                           {Array.isArray(item.companyIndustry) ? (
                             item.companyIndustry.map((industry, index) => (
-                              
                               <div
                                 key={`${item.id}-${index}`}
                                 className="bg-purple-100 text-purple-800 px-4 py-2 rounded-full flex items-center"
@@ -775,7 +821,9 @@ function CompanyProfile() {
                           <h2 className="text-xl font-bold">{culture.title}</h2>
                           <div className="flex gap-4">
                             <button
-                              onClick={() => deleteCulture(culture.id)}
+                              onClick={() =>
+                                deleteCulture(culture.id, culture.title)
+                              }
                               className="text-gray-500 hover:text-gray-600 font-semibold"
                             >
                               Delete
@@ -791,7 +839,9 @@ function CompanyProfile() {
                             </button>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600">{culture.content}</p>
+                        <p className="text-sm text-gray-600">
+                          {culture.content}
+                        </p>
                         <button className="text-sm text-purple-600 mt-1">
                           See More
                         </button>

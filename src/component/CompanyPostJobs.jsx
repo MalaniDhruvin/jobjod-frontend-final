@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, Plus, User, X } from "lucide-react";
 import Dheader from "./Dheader";
 import JobPostModal from "./JobPostModal";
 import DashSidebar from "./DashSidebar";
+import { useParams } from "react-router-dom";
 import { BASE_URL, USER_BASE_URL } from "../config";
 
 // Replace with your token retrieval (from context, localStorage, etc.)
@@ -16,6 +17,9 @@ function CompanyPostJobs() {
   const substrLocation = location.pathname.substring(1);
   const token = localStorage.getItem("authToken"); // Retrieve token from localStorage
   const userId = localStorage.getItem("userId");
+  const { id } = useParams(); // Get the job ID from the URL params
+
+  const UserId = id ? id : userId;
 
   // UI edit states
   const [isEditingJobDetails, setIsEditingJobDetails] = useState(false);
@@ -57,14 +61,14 @@ function CompanyPostJobs() {
       try {
         // Fetch the job list for the company.
         const response = await fetch(
-          `${BASE_URL}/job/by-company/${userId}`,
+          `${BASE_URL}/job/by-company/${UserId}`,
           fetchOptions
         );
         const jobList = await response.json();
 
         // Fetch company details (companyName, location, etc.)
         const companyResponse = await fetch(
-          `${BASE_URL}/company/${userId}`,
+          `${BASE_URL}/company/${UserId}`,
           fetchOptions
         );
         const companyData = await companyResponse.json();

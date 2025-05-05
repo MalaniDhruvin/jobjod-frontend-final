@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import dashboard from "../image/dashboard.png";
+import { useParams } from "react-router-dom";
 import { BASE_URL } from "../config";
 
 export default function ProfileInfo({name}) {
   const token = localStorage.getItem("authToken");
   const userId = localStorage.getItem("userId");
+  const { id } = useParams();
+
+  const UserId = id ? id : userId;
 
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState(null); // No dummy data
@@ -84,7 +88,7 @@ export default function ProfileInfo({name}) {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/company/${userId}`, {
+        const response = await axios.get(`${BASE_URL}/company/${UserId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

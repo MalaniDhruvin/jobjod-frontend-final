@@ -1,11 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { Pencil, Trash2, X } from "lucide-react";
+import { useParams } from "react-router-dom";
 import { USER_BASE_URL } from "../config";
 
 export default function JobPreference() {
   const token = localStorage.getItem("authToken");
   const userId = localStorage.getItem("userId");
+    const { id: paramUserId } = useParams();
+
+    const UserId = paramUserId ? paramUserId : userId;
 
   const [preferences, setPreferences] = useState([]);
   const [editingPreference, setEditingPreference] = useState(null);
@@ -17,7 +21,7 @@ export default function JobPreference() {
   const fetchPreferences = async () => {
     try {
       const response = await axios.get(
-        `${USER_BASE_URL}/preferences/${userId}`,
+        `${USER_BASE_URL}/preferences/${UserId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setPreferences(response.data);

@@ -1,9 +1,11 @@
-import { useState } from "react"
+import { useState,useEffect } from "react"
 import img from "../../image/icon.png"
 import Dheader2 from "../Dheader2"
 import { Link, useLocation } from "react-router-dom"
 import { Search, AlignJustify, ChevronDown, X } from "lucide-react"
 import AdminSidebar from "./AdminSidebar"
+import axios from "axios"
+import {BASE_URL} from "../../config"
 
 function AdminCompanies() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -17,62 +19,51 @@ function AdminCompanies() {
     policyViolation: ""
   })
 
+  const [companies, setCompanies] = useState([])
+
   const location = useLocation()
   const substrLocation = location.pathname.substring(1)
 
-  // Sample company data
-  const companies = [
-    {
-      id: 1,
-      name: "Linear company",
-      status: "active",
-      verification: "verified",
-      policyViolation: false,
-      joiningDate: "07/March/2025",
-      expiryDate: "15/March/2025",
-      logo: img
-    },
-    {
-      id: 2,
-      name: "Linear company",
-      status: "inactive",
-      verification: "pending",
-      policyViolation: false,
-      joiningDate: "07/March/2025",
-      expiryDate: "15/March/2025",
-      logo: img
-    },
-    {
-      id: 3,
-      name: "Linear company",
-      status: "active",
-      verification: "verified",
-      policyViolation: true,
-      joiningDate: "07/March/2025",
-      expiryDate: "15/March/2025",
-      logo: img
-    },
-    {
-      id: 4,
-      name: "Acme Corp",
-      status: "active",
-      verification: "verified",
-      policyViolation: false,
-      joiningDate: "15/April/2025",
-      expiryDate: "22/April/2026",
-      logo: img
-    },
-    {
-      id: 5,
-      name: "Tech Solutions",
-      status: "inactive",
-      verification: "verified",
-      policyViolation: false,
-      joiningDate: "10/February/2025",
-      expiryDate: "10/February/2026",
-      logo: img
+  // Function to generate random data for missing fields
+  const enrichCompany = (company) => {
+    const statuses = ["active", "inactive"]
+    const verifications = ["verified", "pending"]
+    const policyViolations = [true, false]
+
+    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)]
+    const randomVerification = verifications[Math.floor(Math.random() * verifications.length)]
+    const randomPolicyViolation = policyViolations[Math.floor(Math.random() * policyViolations.length)]
+
+    // Random future expiry date — let's just add 1 year to createdAt
+    const createdDate = new Date(company.createdAt)
+    const expiryDate = new Date(createdDate)
+    expiryDate.setFullYear(createdDate.getFullYear() + 1)
+
+    return {
+      name: company.companyName,
+      id: company.userId,
+      status: randomStatus,
+      verification: randomVerification,
+      policyViolation: randomPolicyViolation,
+      expiryDate: expiryDate.toLocaleDateString("en-GB", { day: '2-digit', month: 'long', year: 'numeric' }),
+      logo: img,
+      joiningDate: new Date(company.createdAt).toLocaleDateString("en-GB", { day: '2-digit', month: 'long', year: 'numeric' })
     }
-  ]
+  }
+
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const response = await axios.get(`${BASE_URL}/company`)
+        const enrichedCompanies = response.data.map(enrichCompany)
+        setCompanies(enrichedCompanies)
+      } catch (error) {
+        console.error("Failed to fetch companies:", error)
+      }
+    }
+
+    fetchCompanies()
+  }, [])
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -374,17 +365,17 @@ function AdminCompanies() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-4 sm:mt-6">
-                      <Link to="/CompanyProfile">
+                      <Link to={`/CompanyProfile/${company.id}`}>
                         <button className="px-4 sm:px-6 py-2 bg-black text-white rounded-full text-xs sm:text-sm font-medium">
                           Details
                         </button>
                       </Link>
-                      <Link to="/CompanyPostJobs">
+                      <Link to={`/CompanyPostJobs/${company.id}`}>
                         <button className="px-4 sm:px-6 py-2 bg-black text-white rounded-full text-xs sm:text-sm font-medium">
                           Job Posts
                         </button>
                       </Link>
-                      <Link to="/Message">
+                      <Link to={`/messageView/${company.id}`}>
                         <button className="px-4 sm:px-6 py-2 bg-purple-400 text-white rounded-full text-xs sm:text-sm font-medium">
                           Check Messages
                         </button>

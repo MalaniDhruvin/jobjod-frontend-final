@@ -11,10 +11,10 @@ import p1 from "../image/Notificationlogo1.png";
 import star from "../image/star.png";
 import tick from "../image/tick.png";
 import { Facebook, Linkedin, MoreVertical } from "lucide-react";
-import axios from "axios"
+import axios from "axios";
 
 // Assume BASE_URL is exported from your config file.
-import { BASE_URL,USER_BASE_URL } from "../config";
+import { BASE_URL, USER_BASE_URL } from "../config";
 
 const Singlejobview = () => {
   // Extract jobId from URL parameters.
@@ -33,6 +33,8 @@ const Singlejobview = () => {
   const [isApplied, setIsApplied] = useState(false);
   const [showCompanyPage, setShowCompanyPage] = useState(false);
   const [appliedFor, setAppliedFor] = useState([]);
+  const [user, setUser] = useState(null);
+  const [similarJobs, setSimilarJobs] = useState([]);
 
   // Assume the auth token is stored in localStorage.
   const token = localStorage.getItem("authToken");
@@ -65,10 +67,18 @@ const Singlejobview = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const userRes = await fetch(
+          `${USER_BASE_URL}/users/${userId}`,
+          fetchOptions
+        );
+        const userData = await userRes.json();
+        // console.log(userData);
+        setUser(userData.data);
+
         // 1. Fetch job info using jobId.
         const jobRes = await fetch(`${BASE_URL}/jobs/${jobId}`, fetchOptions);
         const jobData = await jobRes.json();
-        console.log(jobData);
+        // console.log(jobData);
         setJob(jobData);
 
         // 2. Fetch company info using jobData.userId.
@@ -77,7 +87,7 @@ const Singlejobview = () => {
           fetchOptions
         );
         const companyData = await companyRes.json();
-        console.log(companyData);
+        // console.log(companyData);
         setCompany(companyData);
 
         // 3. Fetch skills using jobId (adjust endpoint as needed).
@@ -86,7 +96,7 @@ const Singlejobview = () => {
           fetchOptions
         );
         const skillsData = await skillsRes.json();
-        console.log(skillsData);
+        // console.log(skillsData);
         setSkills(skillsData);
       } catch (error) {
         console.error("Error fetching job details:", error);
@@ -100,11 +110,11 @@ const Singlejobview = () => {
 
   useEffect(() => {
     axios
-      .get(`${USER_BASE_URL}/users/appliedFor/${userId}`,fetchOptions)
+      .get(`${USER_BASE_URL}/users/appliedFor/${userId}`, fetchOptions)
       .then((res) => {
         // Expecting res.data.appliedFor to be an array
         setAppliedFor(res.data.appliedFor || []);
-        console.log(res)
+        // console.log(res)
       })
       .catch((err) => {
         console.error("Error fetching applied jobs:", err);
@@ -113,6 +123,50 @@ const Singlejobview = () => {
         // setLoading(false);
       });
   }, [userId]);
+
+  useEffect(() => {
+    if (!job) return;
+    const fetchSimilar = async () => {
+      try {
+        const label = JSON.parse(job.jobTitle).label;
+        // 1️⃣ fetch jobs with same title
+        const res = await axios.get(
+          `${BASE_URL}/jobs/search/${encodeURIComponent(label)}`,
+          fetchOptions
+        );
+        const jobsByTitle = res.data;
+  
+        // 2️⃣ for each job, fetch its company
+        const enriched = await Promise.all(
+          jobsByTitle
+            .filter((j) => j.id !== job.id)            // skip current job
+            .map(async (j) => {
+              // fetch company info
+              const cmpRes = await axios.get(
+                `${BASE_URL}/company/${j.userId}`,
+                fetchOptions
+              );
+              const cmp = cmpRes.data;
+  
+              // build your shape
+              return {
+                id:          j.id,
+                jobTitle:    JSON.parse(j.jobTitle).label,
+                companyName: cmp.companyName,
+                location:    cmp.location,
+              };
+            })
+        );
+  
+        setSimilarJobs(enriched);
+      } catch (err) {
+        console.error("Error fetching similar jobs:", err);
+      }
+    };
+  
+    fetchSimilar();
+  }, [job]);
+  
 
   // Share functions.
   const shareOnWhatsApp = () => {
@@ -177,22 +231,24 @@ const Singlejobview = () => {
     }
   };
 
-  const handleApply = (jobId) => {
-    // Check if the job is already applied
+  const handleApply = (jobId, receiverId, jobTitle) => {
+    // console.log("Job ID:", receiverId);
+
+    // Check if already applied
     if (appliedFor.some((item) => item.id === jobId)) {
       alert("Already applied for this job");
       return;
     }
-  
+
     const application = {
       id: jobId,
       appliedOn: new Date().toISOString(),
       status: "applied",
     };
-  
+
     const updatedAppliedFor = [...appliedFor, application];
     setAppliedFor(updatedAppliedFor);
-  
+
     axios
       .post(
         `${USER_BASE_URL}/users/${userId}/apply`,
@@ -200,15 +256,30 @@ const Singlejobview = () => {
         fetchOptions
       )
       .then((res) => {
-        console.log("Updated appliedFor:", res.data.appliedFor);
+        // console.log("Updated appliedFor:", res.data.appliedFor);
         setIsApplied(true);
+
+        // 🔔 Create notification for receiver after successful apply
+        axios
+          .post(
+            `${USER_BASE_URL}/notifications`,
+            {
+              receiverId: receiverId,
+              message: `${user.fullName} has applied for job ${jobTitle}.`,
+            },
+            fetchOptions
+          )
+          .then((notifRes) => {
+            console.log("Notification sent:", notifRes.data.notification);
+          })
+          .catch((notifErr) => {
+            console.error("Error sending notification:", notifErr);
+          });
       })
       .catch((err) => {
         console.error("Error updating appliedFor:", err);
-        // Optionally revert the state if the API fails
       });
   };
-  
 
   // If job (and company) data have not loaded yet, show a loading indicator.
   if (!job || !company) {
@@ -236,9 +307,9 @@ const Singlejobview = () => {
           <div className="text-xl font-semibold text-gray-700 mb-2 mx-6">
             Top job picks for you
           </div>
-          <div className="text-xs text-gray-500 mx-6">
-            Based on your search{" "}
-            <span className="font-bold mx-2 md:mx-10">45 Results</span>
+          <div className="text-xs text-gray-500 mx-6 ">
+            Based on your search
+            <span className="font-bold ml-2 md:ml-10">{similarJobs.length} Results</span>
           </div>
           <div className="mt-4 p-2">
             {/* Sample Job Listing - This section would normally be dynamic */}
@@ -253,7 +324,7 @@ const Singlejobview = () => {
               />
               <div>
                 <div className="text-sm font-medium text-gray-800">
-                  {job.title || "Product Designer"}
+                  {JSON.parse(job.jobTitle).label || "Product Designer"}
                 </div>
                 <div className="text-xs text-gray-500">
                   <span className="font-semibold text-black">
@@ -271,7 +342,38 @@ const Singlejobview = () => {
                 </div>
               </div>
             </div>
-            {/* You can repeat similar job listings as needed */}
+            <div className="p-2">
+            {similarJobs.length ? (
+              similarJobs.map(j => (
+                <div
+                  key={j.id}
+                  className="flex items-center py-2 hover:bg-blue-50 cursor-pointer"
+                  onClick={() => window.location.href = `/jobs/${j.id}`}
+                >
+                  <img
+                    src={j.logoUrl || t1}
+                    alt="Logo"
+                    className="w-10 h-10 rounded-xl mr-2"
+                  />
+                  <div>
+                    <div className="text-sm font-medium text-gray-800">
+                      {j.jobTitle}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      <span className="font-semibold">{j.companyName}</span> {j.location}
+                    </div>
+                    {/* <div className="text-xs text-black font-semibold flex mt-2">
+                      <img src={t1} alt="tick" className="mr-1 h-4 w-4" />
+                      Posted on {formatDate(j.createdAt)}
+                    </div> */}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 p-4">No other openings for this role.</p>
+            )}
+            </div>
+            
           </div>
         </div>
 
@@ -340,7 +442,13 @@ const Singlejobview = () => {
                   <button
                     className="bg-purple-500 text-white rounded-xl px-6 py-2 text-sm font-medium mr-2"
                     // onClick={() => setIsApplied(true)}
-                    onClick={()=>handleApply(jobId)}
+                    onClick={() =>
+                      handleApply(
+                        jobId,
+                        job.userId,
+                        JSON.parse(job.jobTitle).label
+                      )
+                    }
                   >
                     Apply Now
                   </button>

@@ -4,11 +4,15 @@ import axios from "axios";
 import { EditDocumentModal } from "./EditDocumentModal";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { ViewDocumentModal } from "./ViewDocumentModal";
+import { useParams } from "react-router-dom";
 import { BASE_URL } from "../config";
 
 export default function LegalDocuments() {
   const token = localStorage.getItem("authToken");
   const userId = localStorage.getItem("userId");
+  const { id } = useParams(); 
+
+  const UserId = id ? id : userId; 
 
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -21,9 +25,7 @@ export default function LegalDocuments() {
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/legaldocs/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await axios.get(`${BASE_URL}/legaldocs/${UserId}`);
         setDocuments(response.data.data || []);
       } catch (error) {
         console.error("Error fetching documents:", error);
